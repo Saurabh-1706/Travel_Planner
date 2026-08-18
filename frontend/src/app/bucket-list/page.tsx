@@ -93,17 +93,17 @@ export default function BucketListPage() {
                 <span className="material-symbols-outlined text-[14px] text-on-surface">{sourceIcons[item.source]?.icon}</span>
                 <span className="font-label-sm text-on-surface text-[10px] uppercase">{sourceIcons[item.source]?.label}</span>
               </div>
-              <button className="w-10 h-10 rounded-full bg-surface/20 backdrop-blur-md flex items-center justify-center text-on-primary hover:bg-surface/40 transition-colors">
+              <button className="w-10 h-10 rounded-full bg-surface/20 backdrop-blur-md flex items-center justify-center text-white hover:bg-surface/40 transition-colors">
                 <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>favorite</span>
               </button>
             </div>
             <div className="absolute bottom-0 left-0 right-0 p-6 flex flex-col justify-end">
               <div className="flex items-center gap-2 mb-2">
                 <span className={`w-2 h-2 rounded-full ${statusColors[item.status]}`}></span>
-                <span className="font-label-sm text-on-primary uppercase tracking-widest">{item.status}</span>
+                <span className="font-label-sm text-white uppercase tracking-widest">{item.status}</span>
               </div>
-              <h3 className="font-headline-lg text-headline-lg text-on-primary mb-1">{item.name}</h3>
-              <p className="font-body-md text-body-md text-on-primary/80 flex items-center gap-1">
+              <h3 className="font-headline-lg text-headline-lg text-white mb-1">{item.name}</h3>
+              <p className="font-body-md text-body-md text-white/80 flex items-center gap-1">
                 <span className="material-symbols-outlined text-[16px]">location_on</span>
                 {item.location}
               </p>
