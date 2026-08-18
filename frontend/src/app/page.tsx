@@ -204,9 +204,9 @@ export default function Home() {
                 <span className="material-symbols-outlined text-on-tertiary" style={{ fontVariationSettings: "'FILL' 1" }}>favorite</span>
               </div>
               <div className="absolute bottom-0 left-0 right-0 p-6 transform translate-y-4 group-hover:translate-y-0 transition-transform">
-                <div className="inline-block px-3 py-1 bg-surface-container-lowest/20 backdrop-blur-md rounded-full font-label-sm text-label-sm text-on-tertiary mb-3 uppercase tracking-widest">{item.tag}</div>
-                <h4 className="font-headline-lg text-headline-md text-on-tertiary mb-1 leading-tight">{item.name}</h4>
-                <p className="font-label-lg text-label-lg text-on-tertiary/70 tracking-wider opacity-0 group-hover:opacity-100 transition-opacity duration-500">{item.loc}</p>
+                <div className="inline-block px-3 py-1 bg-surface-container-lowest/20 backdrop-blur-md rounded-full font-label-sm text-on-tertiary mb-3 uppercase tracking-widest">{item.tag}</div>
+                <h4 className="font-headline-lg text-headline-lg text-on-tertiary mb-1 leading-tight">{item.name}</h4>
+                <p className="font-body-md text-body-md text-on-tertiary/70 tracking-wider opacity-0 group-hover:opacity-100 transition-opacity duration-500">{item.loc}</p>
               </div>
             </div>
           ))}
