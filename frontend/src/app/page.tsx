@@ -25,12 +25,12 @@ export default function Home() {
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.length < 2) return;
-    
+
     setLoading(true);
     try {
       const res = await fetch(`http://localhost:8000/api/v1/places/search?query=${searchQuery}`)
         .catch(() => null);
-        
+
       if (res && res.ok) {
         const data = await res.json();
         setPlaces(data);
@@ -61,29 +61,29 @@ export default function Home() {
 
   return (
     <div className="flex flex-col w-full px-margin-desktop pb-32 pt-8">
-      
+
       {/* Header & Search Section */}
       <div className="mb-section-gap flex flex-col">
         <h1 className="font-display-lg text-display-lg text-on-surface mb-2 tracking-tight">
-          {t.greeting}, {session?.user?.name?.split(' ')[0] || "Traveler"}?! 🌍🚀
+          {t.greeting}, {session?.user?.name?.split(' ')[0] || "Traveller"}?! 🌍🚀
         </h1>
         <p className="font-headline-lg text-headline-lg text-on-surface-variant font-normal opacity-80">
           {t.whereNext}
         </p>
-        
+
         <form onSubmit={handleSearch} className="mt-12 relative max-w-3xl">
           <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none">
             <span className="material-symbols-outlined text-on-surface-variant opacity-60 text-[28px]">search</span>
           </div>
-          <input 
+          <input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-surface-container-high/50 hover:bg-surface-container-high/80 focus:bg-surface-container-lowest transition-colors py-6 pl-16 pr-32 rounded-[32px] font-headline-md text-headline-md text-on-surface placeholder-on-surface-variant/40 outline-none shadow-[0_10px_30px_rgba(26,26,26,0.02)] focus:shadow-[0_10px_30px_rgba(26,26,26,0.06)]" 
+            className="w-full bg-surface-container-high/50 hover:bg-surface-container-high/80 focus:bg-surface-container-lowest transition-colors py-6 pl-16 pr-32 rounded-[32px] font-headline-md text-headline-md text-on-surface placeholder-on-surface-variant/40 outline-none shadow-[0_10px_30px_rgba(26,26,26,0.02)] focus:shadow-[0_10px_30px_rgba(26,26,26,0.06)]"
             placeholder={t.searchPlaceholder}
             type="text"
           />
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             className="absolute inset-y-0 right-2 my-2 mr-2 bg-primary text-on-primary px-8 rounded-full font-label-lg tracking-wider hover:bg-surface-tint transition-colors flex items-center justify-center min-w-[140px]"
             disabled={loading}
           >
@@ -110,8 +110,8 @@ export default function Home() {
               ) : (
                 <ul className="space-y-3 px-2">
                   {places.map((place) => (
-                    <li 
-                      key={place._id} 
+                    <li
+                      key={place._id}
                       className="p-4 rounded-2xl border border-surface-container-high hover:border-primary/30 hover:bg-primary/5 transition-colors cursor-pointer group"
                       onClick={() => setMapCenter([place.latitude, place.longitude])}
                     >
@@ -130,7 +130,7 @@ export default function Home() {
             </div>
             <div className="flex-1 rounded-[24px] overflow-hidden bg-surface-container relative">
               {!loading && places.length > 0 && (
-                 <MapWrapper places={places} center={mapCenter} />
+                <MapWrapper places={places} center={mapCenter} />
               )}
             </div>
           </div>
@@ -139,8 +139,8 @@ export default function Home() {
 
       {/* Quick Import Hero */}
       <div className="mb-section-gap relative rounded-[32px] overflow-hidden bg-primary-container min-h-[400px] flex items-center shadow-xl group">
-        <div 
-          className="absolute inset-0 bg-cover bg-center opacity-40 mix-blend-overlay transition-transform duration-700 group-hover:scale-105" 
+        <div
+          className="absolute inset-0 bg-cover bg-center opacity-40 mix-blend-overlay transition-transform duration-700 group-hover:scale-105"
           style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuABbdlKR9MP6OXFVH25eiDhoisZkRqW3YOXybiRn-ycdmTqLgFqniK9byYObwFVI_ByUEFjXljatXk9Jz1sqJaOka9A3MQJistj6TVQcuU_w0KAVqNYjmzKEYUvtXQkik_EmwGsq2deUj7_xjnJpSgEu8_h2CmL-agealiBrrfRCdxXOVHbC68CtvBC2jYt150XtJi9ezw-YxLA3Z5GmiNzehHO2XDUkXd8bSTKoshgv2vSz0y0lTHL')" }}
         ></div>
         <div className="absolute inset-0 bg-gradient-to-r from-primary-container via-primary-container/80 to-transparent"></div>
@@ -169,32 +169,32 @@ export default function Home() {
             {t.viewAll} <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
           </a>
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter">
           {[
-            { 
-              name: "Devkund Waterfall", 
-              loc: "Maharashtra, India", 
-              tag: "Nature", 
-              img: "https://lh3.googleusercontent.com/aida-public/AB6AXuB2B8pWEkB40yyTXXHiohSe4-AiYXkSbp3ZeJgnxybvs43KYsZPn48X8LX2esgj7KFIg_R2WqXuRCA9XiVuyBNH-Erx_JtrikGzrfybs6veURyoWNmTVriZuQ0GXAQeH6eWFmDO-ZJORUAYlOMHPebVey8_tanCAsSXxc4jWAA9zOJN179EX1vFVGMaMPqH8uTgW45FH3AdoMqsE0jWe0IZYZIKEO6-U6NjQ7B8Y-oxijSI95kriv1V" 
+            {
+              name: "Devkund Waterfall",
+              loc: "Maharashtra, India",
+              tag: "Nature",
+              img: "https://lh3.googleusercontent.com/aida-public/AB6AXuB2B8pWEkB40yyTXXHiohSe4-AiYXkSbp3ZeJgnxybvs43KYsZPn48X8LX2esgj7KFIg_R2WqXuRCA9XiVuyBNH-Erx_JtrikGzrfybs6veURyoWNmTVriZuQ0GXAQeH6eWFmDO-ZJORUAYlOMHPebVey8_tanCAsSXxc4jWAA9zOJN179EX1vFVGMaMPqH8uTgW45FH3AdoMqsE0jWe0IZYZIKEO6-U6NjQ7B8Y-oxijSI95kriv1V"
             },
-            { 
-              name: "Sandhan Valley", 
-              loc: "Maharashtra, India", 
-              tag: "Adventure", 
-              img: "https://lh3.googleusercontent.com/aida-public/AB6AXuCbad8_BDEpgyQt69XtbYmmp9amuiDdh5MvznzdPC-ItxOItYX7_f-dZN9_6eY8ahx8OP0Wi3YpMfotMZNQSeh8Kqd2xatbY2nawHkDeA6NX4iSeMBS9SQjcQiCLgkZ2jkupHCSmqYbBDqeTIkVYOzXeAcd_82fJ1w6icGnU03UTr2TfCCGMtQ7UvvkAT2AnQCEYLZE0ZvAzlPRscXiVIn1HesFPM44-LMNgBM_Yl7qKbXQBE_sauf7" 
+            {
+              name: "Sandhan Valley",
+              loc: "Maharashtra, India",
+              tag: "Adventure",
+              img: "https://lh3.googleusercontent.com/aida-public/AB6AXuCbad8_BDEpgyQt69XtbYmmp9amuiDdh5MvznzdPC-ItxOItYX7_f-dZN9_6eY8ahx8OP0Wi3YpMfotMZNQSeh8Kqd2xatbY2nawHkDeA6NX4iSeMBS9SQjcQiCLgkZ2jkupHCSmqYbBDqeTIkVYOzXeAcd_82fJ1w6icGnU03UTr2TfCCGMtQ7UvvkAT2AnQCEYLZE0ZvAzlPRscXiVIn1HesFPM44-LMNgBM_Yl7qKbXQBE_sauf7"
             },
-            { 
-              name: "Harishchandragad", 
-              loc: "Maharashtra, India", 
-              tag: "Heritage", 
-              img: "https://lh3.googleusercontent.com/aida-public/AB6AXuCc9VMlfpJtNggVnlfIvUQoN1gzMrNH2t_XXA6YGmGiN7CmymDRGFFY7-OlBdYEohXdH3gLDDVo1s2IVDxK0r4hmNsLFqj9Qxo05hyBIizimVtJxlOFKLWJMEcBUvi4GsAYeCibti4ok6xfLhaQE3ImLbb7QoZ56tJSpBypYKfdk89BOk0F6ikuoxgOR02wwecDt30kfkBBBzVabJoQe4-rMs43xr7lfds4mtqy-jlSOebAKY99pKtS" 
+            {
+              name: "Harishchandragad",
+              loc: "Maharashtra, India",
+              tag: "Heritage",
+              img: "https://lh3.googleusercontent.com/aida-public/AB6AXuCc9VMlfpJtNggVnlfIvUQoN1gzMrNH2t_XXA6YGmGiN7CmymDRGFFY7-OlBdYEohXdH3gLDDVo1s2IVDxK0r4hmNsLFqj9Qxo05hyBIizimVtJxlOFKLWJMEcBUvi4GsAYeCibti4ok6xfLhaQE3ImLbb7QoZ56tJSpBypYKfdk89BOk0F6ikuoxgOR02wwecDt30kfkBBBzVabJoQe4-rMs43xr7lfds4mtqy-jlSOebAKY99pKtS"
             },
-            { 
-              name: "Butterfly Beach", 
-              loc: "Goa, India", 
-              tag: "Coastal", 
-              img: "https://lh3.googleusercontent.com/aida-public/AB6AXuDdz0jNkfgaymgceQlaYNk4GA5s7Sjpw18WnchlJXE_tJ2szRFZlyVrz_dDbFolK7ZkfHUTQSLay6fG1VzNaWXnpkK5GweTW9EfrqFIuNeX6JmFjT7nAQ-kPgQ7AoKsqJkZ7OKKS4cdkgq4l3SGZzJh8Pik-PlbkTYjbW5WmVdBJj3MMdVEAldar-zMnn1WxM6Gn7E4lx1Dn3P0kkB4MyqczWUc5cPNcuLu7-ZECTYnPkE3cBgoD_7s" 
+            {
+              name: "Butterfly Beach",
+              loc: "Goa, India",
+              tag: "Coastal",
+              img: "https://lh3.googleusercontent.com/aida-public/AB6AXuDdz0jNkfgaymgceQlaYNk4GA5s7Sjpw18WnchlJXE_tJ2szRFZlyVrz_dDbFolK7ZkfHUTQSLay6fG1VzNaWXnpkK5GweTW9EfrqFIuNeX6JmFjT7nAQ-kPgQ7AoKsqJkZ7OKKS4cdkgq4l3SGZzJh8Pik-PlbkTYjbW5WmVdBJj3MMdVEAldar-zMnn1WxM6Gn7E4lx1Dn3P0kkB4MyqczWUc5cPNcuLu7-ZECTYnPkE3cBgoD_7s"
             },
           ].map((item, i) => (
             <div key={i} className="group relative rounded-[24px] overflow-hidden aspect-[4/5] cursor-pointer shadow-sm hover:shadow-xl transition-all duration-500 bg-surface-container">
