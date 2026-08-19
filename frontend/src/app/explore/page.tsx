@@ -77,12 +77,12 @@ export default function ExplorePage() {
             <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105" style={{ backgroundImage: `url('${dest.img}')` }}></div>
             <div className="absolute inset-0 bg-gradient-to-t from-[#1A1A1A]/90 via-[#1A1A1A]/20 to-transparent opacity-80 group-hover:opacity-90 transition-opacity"></div>
             <div className="absolute top-4 right-4 w-10 h-10 rounded-full bg-surface-container-lowest/20 backdrop-blur-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity transform translate-y-2 group-hover:translate-y-0">
-              <span className="material-symbols-outlined text-on-tertiary">bookmark_add</span>
+              <span className="material-symbols-outlined text-white">bookmark_add</span>
             </div>
             <div className="absolute bottom-0 left-0 right-0 p-6 transform translate-y-4 group-hover:translate-y-0 transition-transform">
-              <div className="inline-block px-3 py-1 bg-surface-container-lowest/20 backdrop-blur-md rounded-full font-label-sm text-label-sm text-on-tertiary mb-3">{dest.category}</div>
-              <h4 className="font-headline-md text-headline-md text-on-tertiary mb-1">{dest.name}</h4>
-              <p className="font-body-md text-body-md text-on-tertiary/70 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-center gap-1">
+              <div className="inline-block px-3 py-1 bg-surface-container-lowest/20 backdrop-blur-md rounded-full font-label-sm text-white mb-3">{dest.category}</div>
+              <h4 className="font-headline-md text-headline-md text-white mb-1">{dest.name}</h4>
+              <p className="font-body-md text-body-md text-white/70 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-center gap-1">
                 <span className="material-symbols-outlined text-[16px]">location_on</span>
                 {dest.location}
               </p>
