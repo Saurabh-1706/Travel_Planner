@@ -87,7 +87,7 @@ export default function BucketListPage() {
         {filtered.map(item => (
           <div key={item.id} className="group relative rounded-2xl overflow-hidden bg-surface-container hover:shadow-xl transition-all duration-500 cursor-pointer h-[400px]">
             <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105" style={{ backgroundImage: `url('${item.img}')` }}></div>
-            <div className="absolute inset-0 bg-gradient-to-t from-inverse-surface/90 via-inverse-surface/20 to-transparent"></div>
+            <div className="absolute inset-0 bg-gradient-to-t from-[#1A1A1A]/90 via-[#1A1A1A]/20 to-transparent"></div>
             <div className="absolute top-4 left-4 right-4 flex justify-between items-start">
               <div className="bg-surface-container-highest/80 backdrop-blur-md px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-sm">
                 <span className="material-symbols-outlined text-[14px] text-on-surface">{sourceIcons[item.source]?.icon}</span>
