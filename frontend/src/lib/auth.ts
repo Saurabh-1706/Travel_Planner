@@ -25,7 +25,7 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
-          const res = await fetch("http://localhost:8000/api/v1/auth/login", {
+          const res = await fetch("http://127.0.0.1:8000/api/v1/auth/login", {
             method: "POST",
             headers: {
               "Content-Type": "application/x-www-form-urlencoded",
@@ -58,7 +58,7 @@ export const authOptions: NextAuthOptions = {
       if (account && user) {
         if (account.provider === "google") {
           try {
-            const res = await fetch("http://localhost:8000/api/v1/auth/google", {
+            const res = await fetch("http://127.0.0.1:8000/api/v1/auth/google", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
@@ -76,7 +76,7 @@ export const authOptions: NextAuthOptions = {
           }
         } else {
           token.sub = user.id;
-          token.accessToken = (user as any).accessToken;
+          token.accessToken = user.accessToken;
         }
       }
       return token;
@@ -84,7 +84,7 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (token && session.user) {
         session.user.id = token.sub as string;
-        (session as any).accessToken = token.accessToken;
+        session.accessToken = token.accessToken;
       }
       return session;
     }

@@ -1,30 +1,84 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSession, signOut } from "next-auth/react";
+import Link from "next/link";
+import {
+  BucketListItem,
+  BucketStatus,
+  placeLocationLabel,
+  fetchBucketList,
+  removeFromBucketList,
+  ApiError,
+} from "@/lib/api";
 
-const tabs = ["All Places", "Want to Visit", "Planned", "Visited"];
-
-const bucketItems = [
-  { id: "1", name: "Devkund Waterfall", location: "Maharashtra, India", status: "Want to Visit", source: "Instagram", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuCyhiYF-a2eql2Iz3Ve-cfB5kze6zpD25S-DlZ5gYt3kPIU9DlVtPerZcxNz65tTeg-dKzpbE59rE9Qr6Jpw60himI2h5YUMHSqJWNCVSOYjg7yPYtlUurAgORyfyfteZk-w8ENpPcTI8eAyplm4CHACIGq30nzO_3RUROa5eL5oekgS-NEZjtlyWiD1wquxr-DP_PnnQHr4vng1ayshzmBmgmyIVswfylj-6EJtN0ce92AAass_NgO" },
-  { id: "2", name: "Sandhan Valley", location: "Western Ghats, India", status: "Planned", source: "Web", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuBZlug7NGGsiRYbGnzRfhnO_cxcWsR4qvHHNoaF40_Kfj5j1fWPntcwTRRALcbHp0fNf7ABM3Zz9ladIHSwn4yH2JmEsFEkpin3wS2G4WSznsQrMWMH5cu_CEXLUw1DWgzJGpyHYg9EEKrJzbhxtrjIMUOE_1KLOEftLmBdoUvKfT3Pae5Vw56YStW2j27SZnifT347jeIjQCApzToathCT9DuKB_rk2M_xObt0MM-WFtBOf7R-SEd5" },
-  { id: "3", name: "Om Beach", location: "Gokarna, India", status: "Want to Visit", source: "Friend", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuBEgeDSKa3nLCLBFeN13C1O8QW34UUWAZmJ6p0ytZmVY_nVCyhwlqWZ_U2WJeJsWDXr_9bfNrI1EFQydQpBT79Q6cmnU-3EwQYB8cqSFnJ2jIEQcuoDqCjS6DK49Y5CwSlyLnkqzR9RkTZdJDfgz1GtNC30Fvp_zB-oT7FE34m67uBvnvfh86JnYrHDqGJYOp40vLiSaW7WTB_kKTXteqa0rK4EYduprS8Ueg13mgg-KwaPlIDLe-_h" },
-  { id: "4", name: "Harishchandragad", location: "Maharashtra, India", status: "Visited", source: "Web", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuCc9VMlfpJtNggVnlfIvUQoN1gzMrNH2t_XXA6YGmGiN7CmymDRGFFY7-OlBdYEohXdH3gLDDVo1s2IVDxK0r4hmNsLFqj9Qxo05hyBIizimVtJxlOFKLWJMEcBUvi4GsAYeCibti4ok6xfLhaQE3ImLbb7QoZ56tJSpBypYKfdk89BOk0F6ikuoxgOR02wwecDt30kfkBBBzVabJoQe4-rMs43xr7lfds4mtqy-jlSOebAKY99pKtS" },
-  { id: "5", name: "Butterfly Beach", location: "Goa, India", status: "Planned", source: "Instagram", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuDdz0jNkfgaymgceQlaYNk4GA5s7Sjpw18WnchlJXE_tJ2szRFZlyVrz_dDbFolK7ZkfHUTQSLay6fG1VzNaWXnpkK5GweTW9EfrqFIuNeX6JmFjT7nAQ-kPgQ7AoKsqJkZ7OKKS4cdkgq4l3SGZzJh8Pik-PlbkTYjbW5WmVdBJj3MMdVEAldar-zMnn1WxM6Gn7E4lx1Dn3P0kkB4MyqczWUc5cPNcuLu7-ZECTYnPkE3cBgoD_7s" },
-  { id: "6", name: "Bhandardara", location: "Maharashtra, India", status: "Want to Visit", source: "Web", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuBsomkP2rDarf2KzApFgzh-7dVwztMAwWnHOhJGWO2BtjrR7-69YNDiIKfSZOdLfjVajdaNmr2AomDz5h6EkcyMh-UyDySaqoE8RWNPJgFiaHMdp7MSfWqGZwh09lymygxH-w5OYCmwrvftOOQVEgzv9fn1AZj75NFG9Qw_JU-kFExd6xfTQfT7W28n52Va4wXnh32vJuPXj_-J88fv2AyRnburB7ZNU9t5LglNUmXShLntmrx76TxH" },
-];
+const tabs: ("All Places" | BucketStatus)[] = ["All Places", "Want to Visit", "Planned", "Visited"];
 
 const statusColors: Record<string, string> = { "Want to Visit": "bg-primary", "Planned": "bg-secondary", "Visited": "bg-tertiary" };
 const sourceIcons: Record<string, { icon: string; label: string }> = {
   Instagram: { icon: "photo_camera", label: "Added from Instagram" },
   Web: { icon: "public", label: "Added from Web" },
   Friend: { icon: "group", label: "Shared by Friend" },
+  Manual: { icon: "bookmark_added", label: "Saved from Explore" },
 };
 
 export default function BucketListPage() {
-  const [activeTab, setActiveTab] = useState("All Places");
+  const { data: session, status: authStatus } = useSession();
+  const [activeTab, setActiveTab] = useState<typeof tabs[number]>("All Places");
+  const [items, setItems] = useState<BucketListItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [removingId, setRemovingId] = useState<string | null>(null);
 
-  const filtered = activeTab === "All Places" ? bucketItems : bucketItems.filter(item => item.status === activeTab);
-  const planned = bucketItems.filter(b => b.status === "Planned").length;
+  useEffect(() => {
+    if (authStatus !== "authenticated" || !session?.accessToken) {
+      if (authStatus === "unauthenticated") setLoading(false);
+      return;
+    }
+    setLoading(true);
+    fetchBucketList(session.accessToken)
+      .then(setItems)
+      .catch((err) => {
+        if (err instanceof ApiError && err.status === 401) {
+          // The session's token no longer matches a real account (e.g. a
+          // dev database reset) — force a clean re-login instead of
+          // showing a confusing error.
+          signOut({ callbackUrl: "/login" });
+          return;
+        }
+        setError("Couldn't load your bucket list. Is the backend running?");
+      })
+      .finally(() => setLoading(false));
+  }, [authStatus, session?.accessToken]);
+
+  const handleRemove = async (item: BucketListItem) => {
+    if (!session?.accessToken) return;
+    setRemovingId(item.id);
+    try {
+      await removeFromBucketList(session.accessToken, item.id);
+      setItems((prev) => prev.filter((i) => i.id !== item.id));
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setRemovingId(null);
+    }
+  };
+
+  const filtered = activeTab === "All Places" ? items : items.filter(item => item.status === activeTab);
+  const planned = items.filter(i => i.status === "Planned").length;
+
+  if (authStatus === "unauthenticated") {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] px-margin-desktop text-center gap-4">
+        <span className="material-symbols-outlined text-primary text-[48px]">bookmark_star</span>
+        <h1 className="font-display-md text-display-md text-on-surface">Sign in to see your bucket list</h1>
+        <p className="font-body-lg text-on-surface-variant max-w-md">Save places from Explore and they'll show up here.</p>
+        <Link href="/login" className="mt-2 px-8 py-3 rounded-full bg-primary text-on-primary font-label-lg hover:bg-surface-tint transition-colors">
+          Sign in
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col w-full relative px-margin-desktop">
@@ -41,7 +95,7 @@ export default function BucketListPage() {
           <h1 className="font-display-lg text-display-lg text-on-surface">My Bucket List</h1>
           <div className="flex items-center gap-6 mt-2">
             <div className="flex flex-col">
-              <span className="font-display-md text-display-md text-primary">{bucketItems.length}</span>
+              <span className="font-display-md text-display-md text-primary">{items.length}</span>
               <span className="font-label-lg text-on-surface-variant uppercase">Places</span>
             </div>
             <div className="w-px h-12 bg-outline-variant/30"></div>
@@ -51,19 +105,11 @@ export default function BucketListPage() {
             </div>
           </div>
         </div>
-
-        {/* View Toggles */}
-        <div className="flex bg-surface-container-high p-1.5 rounded-xl self-start md:self-end shadow-sm">
-          <button className="px-6 py-2.5 rounded-lg bg-surface text-on-surface font-label-lg shadow-sm transition-all flex items-center gap-2">
-            <span className="material-symbols-outlined text-[18px]">grid_view</span>
-            Grid
-          </button>
-          <button className="px-6 py-2.5 rounded-lg text-on-surface-variant hover:text-on-surface font-label-lg transition-all flex items-center gap-2">
-            <span className="material-symbols-outlined text-[18px]">map</span>
-            Map
-          </button>
-        </div>
       </section>
+
+      {error && (
+        <div className="mb-8 p-4 rounded-2xl bg-red-50 border border-red-200 text-red-700 font-body-md">{error}</div>
+      )}
 
       {/* Tabs */}
       <section className="flex overflow-x-auto pb-4 mb-8 gap-2 hide-scrollbar border-b border-outline-variant/20">
@@ -84,32 +130,55 @@ export default function BucketListPage() {
 
       {/* Grid */}
       <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter mb-section-gap">
-        {filtered.map(item => (
-          <div key={item.id} className="group relative rounded-2xl overflow-hidden bg-surface-container hover:shadow-xl transition-all duration-500 cursor-pointer h-[400px]">
-            <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105" style={{ backgroundImage: `url('${item.img}')` }}></div>
-            <div className="absolute inset-0 bg-gradient-to-t from-[#1A1A1A]/90 via-[#1A1A1A]/20 to-transparent"></div>
-            <div className="absolute top-4 left-4 right-4 flex justify-between items-start">
-              <div className="bg-surface-container-highest/80 backdrop-blur-md px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-sm">
-                <span className="material-symbols-outlined text-[14px] text-on-surface">{sourceIcons[item.source]?.icon}</span>
-                <span className="font-label-sm text-on-surface text-[10px] uppercase">{sourceIcons[item.source]?.label}</span>
-              </div>
-              <button className="w-10 h-10 rounded-full bg-surface/20 backdrop-blur-md flex items-center justify-center text-white hover:bg-surface/40 transition-colors">
-                <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>favorite</span>
-              </button>
-            </div>
-            <div className="absolute bottom-0 left-0 right-0 p-6 flex flex-col justify-end">
-              <div className="flex items-center gap-2 mb-2">
-                <span className={`w-2 h-2 rounded-full ${statusColors[item.status]}`}></span>
-                <span className="font-label-sm text-white uppercase tracking-widest">{item.status}</span>
-              </div>
-              <h3 className="font-headline-lg text-headline-lg text-white mb-1">{item.name}</h3>
-              <p className="font-body-md text-body-md text-white/80 flex items-center gap-1">
-                <span className="material-symbols-outlined text-[16px]">location_on</span>
-                {item.location}
-              </p>
-            </div>
+        {loading ? (
+          [1, 2, 3].map(i => (
+            <div key={i} className="animate-pulse rounded-2xl h-[400px] bg-surface-container" />
+          ))
+        ) : filtered.length === 0 ? (
+          <div className="col-span-full text-center py-16 flex flex-col items-center gap-3">
+            <span className="material-symbols-outlined text-on-surface-variant text-[40px]">bookmark_border</span>
+            <p className="font-body-lg text-on-surface-variant">
+              {items.length === 0 ? "Nothing saved yet — head to Explore and bookmark a few places." : "No places in this list yet."}
+            </p>
+            {items.length === 0 && (
+              <Link href="/explore" className="mt-2 px-6 py-2.5 rounded-full bg-primary text-on-primary font-label-lg hover:bg-surface-tint transition-colors">
+                Explore destinations
+              </Link>
+            )}
           </div>
-        ))}
+        ) : (
+          filtered.map(item => (
+            <div key={item.id} className="group relative rounded-2xl overflow-hidden bg-surface-container hover:shadow-xl transition-all duration-500 cursor-pointer h-[400px]">
+              <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105" style={{ backgroundImage: `url('${item.place.photos[0] || ""}')` }}></div>
+              <div className="absolute inset-0 bg-gradient-to-t from-[#1A1A1A]/90 via-[#1A1A1A]/20 to-transparent"></div>
+              <div className="absolute top-4 left-4 right-4 flex justify-between items-start">
+                <div className="bg-surface-container-highest/80 backdrop-blur-md px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-sm">
+                  <span className="material-symbols-outlined text-[14px] text-on-surface">{sourceIcons[item.source]?.icon}</span>
+                  <span className="font-label-sm text-on-surface text-[10px] uppercase">{sourceIcons[item.source]?.label}</span>
+                </div>
+                <button
+                  onClick={() => handleRemove(item)}
+                  disabled={removingId === item.id}
+                  className="w-10 h-10 rounded-full bg-surface/20 backdrop-blur-md flex items-center justify-center text-white hover:bg-surface/40 transition-colors disabled:opacity-50"
+                  aria-label="Remove from bucket list"
+                >
+                  <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>favorite</span>
+                </button>
+              </div>
+              <div className="absolute bottom-0 left-0 right-0 p-6 flex flex-col justify-end">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className={`w-2 h-2 rounded-full ${statusColors[item.status]}`}></span>
+                  <span className="font-label-sm text-white uppercase tracking-widest">{item.status}</span>
+                </div>
+                <h3 className="font-headline-lg text-headline-lg text-white mb-1">{item.place.name}</h3>
+                <p className="font-body-md text-body-md text-white/80 flex items-center gap-1">
+                  <span className="material-symbols-outlined text-[16px]">location_on</span>
+                  {placeLocationLabel(item.place)}
+                </p>
+              </div>
+            </div>
+          ))
+        )}
       </section>
 
       {/* CTA Banner */}

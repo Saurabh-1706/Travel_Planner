@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Plane, Mail, Lock, AlertCircle } from "lucide-react"
 import { useLanguage } from "@/lib/LanguageContext"
+import GoogleIcon from "@/components/icons/GoogleIcon"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -128,8 +129,9 @@ export default function LoginPage() {
           <button
             type="button"
             onClick={() => signIn("google", { callbackUrl: "/" })}
-            className="w-full flex justify-center py-2.5 px-4 border border-gray-200 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+            className="w-full flex items-center justify-center gap-3 py-2.5 px-4 border border-gray-200 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
           >
+            <GoogleIcon />
             Google
           </button>
         </div>

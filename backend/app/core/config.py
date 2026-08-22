@@ -17,7 +17,14 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "super_secret_key_please_change_in_production"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7 # 7 days
-    
+
+    # AI (Gemini). Get a key at https://aistudio.google.com/apikey
+    GEMINI_API_KEY: str = ""
+    GEMINI_MODEL: str = "gemini-2.0-flash"
+
+    # Inspiration imports
+    MAX_VIDEO_UPLOAD_MB: int = 100
+
     model_config = SettingsConfigDict(env_file=".env", env_ignore_empty=True, extra="ignore")
 
 settings = Settings()

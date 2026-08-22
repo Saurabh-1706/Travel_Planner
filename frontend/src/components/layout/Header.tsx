@@ -1,11 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+import { useSession } from "next-auth/react";
 import { useLanguage } from "@/lib/LanguageContext";
 
 export default function Header() {
   const [search, setSearch] = useState("");
   const { t } = useLanguage();
+  const { status } = useSession();
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,12 +27,31 @@ export default function Header() {
         />
       </form>
       <div className="flex items-center gap-6">
-        <button className="text-on-surface-variant hover:text-primary transition-colors">
-          <span className="material-symbols-outlined">notifications</span>
-        </button>
-        <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center cursor-pointer hover:ring-4 ring-primary/10 transition-all">
-          <span className="material-symbols-outlined text-on-primary text-[18px]">person</span>
-        </div>
+        {status === "authenticated" ? (
+          <>
+            <button className="text-on-surface-variant hover:text-primary transition-colors">
+              <span className="material-symbols-outlined">notifications</span>
+            </button>
+            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center cursor-pointer hover:ring-4 ring-primary/10 transition-all">
+              <span className="material-symbols-outlined text-on-primary text-[18px]">person</span>
+            </div>
+          </>
+        ) : status === "loading" ? null : (
+          <div className="flex items-center gap-3">
+            <Link
+              href="/login"
+              className="px-5 py-2 rounded-full font-label-lg text-label-lg text-on-surface-variant hover:text-primary transition-colors"
+            >
+              {t.signIn}
+            </Link>
+            <Link
+              href="/register"
+              className="px-5 py-2 rounded-full font-label-lg text-label-lg bg-primary text-on-primary hover:bg-surface-tint transition-colors"
+            >
+              {t.signUpFree}
+            </Link>
+          </div>
+        )}
       </div>
     </header>
   );

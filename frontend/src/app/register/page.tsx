@@ -2,8 +2,11 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { signIn } from "next-auth/react"
 import Link from "next/link"
 import { Plane, Mail, Lock, User, AlertCircle } from "lucide-react"
+import GoogleIcon from "@/components/icons/GoogleIcon"
+import { API_BASE_URL } from "@/lib/api"
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -18,13 +21,24 @@ export default function RegisterPage() {
     setIsLoading(true)
     setError("")
 
-    // We'll wire this up to an API endpoint later
-    // For now, this is just the UI
-    setTimeout(() => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password }),
+      })
+
+      if (res.ok) {
+        router.push("/login")
+      } else {
+        const data = await res.json().catch(() => null)
+        setError(data?.detail || "Could not create your account. Please try again.")
+      }
+    } catch (err) {
+      setError("Could not reach the server. Please try again.")
+    } finally {
       setIsLoading(false)
-      // Simulate success and redirect to login
-      router.push("/login")
-    }, 1500)
+    }
   }
 
   return (
@@ -118,6 +132,26 @@ export default function RegisterPage() {
             {isLoading ? "Creating account..." : "Sign up"}
           </button>
         </form>
+
+        <div className="mt-8 relative">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-gray-200" />
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="px-2 bg-white text-gray-500">Or continue with</span>
+          </div>
+        </div>
+
+        <div className="mt-6">
+          <button
+            type="button"
+            onClick={() => signIn("google", { callbackUrl: "/" })}
+            className="w-full flex items-center justify-center gap-3 py-2.5 px-4 border border-gray-200 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+          >
+            <GoogleIcon />
+            Google
+          </button>
+        </div>
 
         <p className="mt-6 text-center text-sm text-gray-600">
           Already have an account?{" "}

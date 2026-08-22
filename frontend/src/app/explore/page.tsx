@@ -1,7 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSession, signOut } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import MapWrapper from "@/components/MapWrapper";
+import {
+  Place,
+  BucketListItem,
+  placeLocationLabel,
+  fetchPlaces,
+  searchPlaces,
+  fetchBucketList,
+  addToBucketList,
+  removeFromBucketList,
+  ApiError,
+} from "@/lib/api";
 
 const categories = [
   { id: "all", label: "All", icon: "public" },
@@ -12,20 +25,110 @@ const categories = [
   { id: "urban", label: "Urban", icon: "location_city" },
 ];
 
-const destinations = [
-  { _id: "1", name: "Munnar Tea Gardens", category: "Nature", location: "Kerala, India", latitude: 10.0889, longitude: 77.0595, img: "https://lh3.googleusercontent.com/aida-public/AB6AXuB2B8pWEkB40yyTXXHiohSe4-AiYXkSbp3ZeJgnxybvs43KYsZPn48X8LX2esgj7KFIg_R2WqXuRCA9XiVuyBNH-Erx_JtrikGzrfybs6veURyoWNmTVriZuQ0GXAQeH6eWFmDO-ZJORUAYlOMHPebVey8_tanCAsSXxc4jWAA9zOJN179EX1vFVGMaMPqH8uTgW45FH3AdoMqsE0jWe0IZYZIKEO6-U6NjQ7B8Y-oxijSI95kriv1V" },
-  { _id: "2", name: "Jaisalmer Fort", category: "Heritage", location: "Rajasthan, India", latitude: 26.9124, longitude: 70.9090, img: "https://lh3.googleusercontent.com/aida-public/AB6AXuCc9VMlfpJtNggVnlfIvUQoN1gzMrNH2t_XXA6YGmGiN7CmymDRGFFY7-OlBdYEohXdH3gLDDVo1s2IVDxK0r4hmNsLFqj9Qxo05hyBIizimVtJxlOFKLWJMEcBUvi4GsAYeCibti4ok6xfLhaQE3ImLbb7QoZ56tJSpBypYKfdk89BOk0F6ikuoxgOR02wwecDt30kfkBBBzVabJoQe4-rMs43xr7lfds4mtqy-jlSOebAKY99pKtS" },
-  { _id: "3", name: "Radhanagar Beach", category: "Coastal", location: "Andaman, India", latitude: 11.9820, longitude: 92.9609, img: "https://lh3.googleusercontent.com/aida-public/AB6AXuDdz0jNkfgaymgceQlaYNk4GA5s7Sjpw18WnchlJXE_tJ2szRFZlyVrz_dDbFolK7ZkfHUTQSLay6fG1VzNaWXnpkK5GweTW9EfrqFIuNeX6JmFjT7nAQ-kPgQ7AoKsqJkZ7OKKS4cdkgq4l3SGZzJh8Pik-PlbkTYjbW5WmVdBJj3MMdVEAldar-zMnn1WxM6Gn7E4lx1Dn3P0kkB4MyqczWUc5cPNcuLu7-ZECTYnPkE3cBgoD_7s" },
-  { _id: "4", name: "Spiti Valley", category: "Adventure", location: "Himachal, India", latitude: 32.2464, longitude: 78.0349, img: "https://lh3.googleusercontent.com/aida-public/AB6AXuCbad8_BDEpgyQt69XtbYmmp9amuiDdh5MvznzdPC-ItxOItYX7_f-dZN9_6eY8ahx8OP0Wi3YpMfotMZNQSeh8Kqd2xatbY2nawHkDeA6NX4iSeMBS9SQjcQiCLgkZ2jkupHCSmqYbBDqeTIkVYOzXeAcd_82fJ1w6icGnU03UTr2TfCCGMtQ7UvvkAT2AnQCEYLZE0ZvAzlPRscXiVIn1HesFPM44-LMNgBM_Yl7qKbXQBE_sauf7" },
-  { _id: "5", name: "Pondicherry", category: "Urban", location: "Tamil Nadu, India", latitude: 11.9416, longitude: 79.8083, img: "https://lh3.googleusercontent.com/aida-public/AB6AXuCwB_BBoug_NE2avkWHWXubcDk-QP9t8yKvda31VJSvdXPFon-iZ69V2Qm9uBZcQGtfuL4e3_1SxgOKflTPYKPcKd_Ew9gKh6mI8zulavROUKXzkyJ4KDxfxk6GwcYoUmeu69cseaYK7ZGFLXBs5OFmlgA5tg1xW7tLFpgT_rXhudIS4ClCQxq8d2RmxtijRH5Qmmfgzgj-wodrqJBOLYPFICwfo8zasNEs5pFywAftzabk6e2B5aMg" },
-  { _id: "6", name: "Valley of Flowers", category: "Nature", location: "Uttarakhand, India", latitude: 30.7280, longitude: 79.6050, img: "https://lh3.googleusercontent.com/aida-public/AB6AXuBsomkP2rDarf2KzApFgzh-7dVwztMAwWnHOhJGWO2BtjrR7-69YNDiIKfSZOdLfjVajdaNmr2AomDz5h6EkcyMh-UyDySaqoE8RWNPJgFiaHMdp7MSfWqGZwh09lymygxH-w5OYCmwrvftOOQVEgzv9fn1AZj75NFG9Qw_JU-kFExd6xfTQfT7W28n52Va4wXnh32vJuPXj_-J88fv2AyRnburB7ZNU9t5LglNUmXShLntmrx76TxH" },
-];
-
 export default function ExplorePage() {
+  const { data: session, status: authStatus } = useSession();
+  const router = useRouter();
+
   const [activeCategory, setActiveCategory] = useState("all");
   const [showMap, setShowMap] = useState(false);
+  const [places, setPlaces] = useState<Place[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const filtered = activeCategory === "all" ? destinations : destinations.filter(d => d.category.toLowerCase() === activeCategory);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<Place[] | null>(null);
+  const [searching, setSearching] = useState(false);
+  const isSearchMode = searchQuery.trim().length >= 2;
+
+  // Maps place id -> bucket list item id, for places already saved.
+  const [saved, setSaved] = useState<Record<string, string>>({});
+  const [savingId, setSavingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setLoading(true);
+    setError("");
+    fetchPlaces(activeCategory)
+      .then(setPlaces)
+      .catch(() => setError("Couldn't load destinations. Is the backend running?"))
+      .finally(() => setLoading(false));
+  }, [activeCategory]);
+
+  // Debounced live search — also reaches out to OpenStreetMap for places we
+  // don't already know about, so it's not limited to the seeded/browsed set.
+  useEffect(() => {
+    const trimmed = searchQuery.trim();
+    if (trimmed.length < 2) {
+      setSearchResults(null);
+      setSearching(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    setSearching(true);
+    setError("");
+    const timer = setTimeout(() => {
+      searchPlaces(trimmed, { signal: controller.signal })
+        .then(setSearchResults)
+        .catch((err) => {
+          if (err instanceof DOMException && err.name === "AbortError") return;
+          setError("Couldn't search destinations. Is the backend running?");
+          setSearchResults([]);
+        })
+        .finally(() => setSearching(false));
+    }, 500);
+
+    return () => { clearTimeout(timer); controller.abort(); };
+  }, [searchQuery]);
+
+  useEffect(() => {
+    if (!session?.accessToken) {
+      setSaved({});
+      return;
+    }
+    fetchBucketList(session.accessToken)
+      .then((items) => {
+        const map: Record<string, string> = {};
+        items.forEach((item) => { map[item.place.id] = item.id; });
+        setSaved(map);
+      })
+      .catch((err) => {
+        if (err instanceof ApiError && err.status === 401) signOut({ callbackUrl: "/login" });
+      });
+  }, [session?.accessToken]);
+
+  const toggleSave = async (place: Place) => {
+    if (authStatus !== "authenticated" || !session?.accessToken) {
+      router.push("/login");
+      return;
+    }
+    setSavingId(place.id);
+    try {
+      const existingItemId = saved[place.id];
+      if (existingItemId) {
+        await removeFromBucketList(session.accessToken, existingItemId);
+        setSaved((prev) => {
+          const next = { ...prev };
+          delete next[place.id];
+          return next;
+        });
+      } else {
+        const item: BucketListItem = await addToBucketList(session.accessToken, place.id);
+        setSaved((prev) => ({ ...prev, [place.id]: item.id }));
+      }
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        signOut({ callbackUrl: "/login" });
+      } else if (!(err instanceof ApiError && err.status === 409)) {
+        // A 409 here means another tab already saved it — treat as success.
+        console.error(err);
+      }
+    } finally {
+      setSavingId(null);
+    }
+  };
+
+  const displayed = isSearchMode ? (searchResults ?? []) : places;
+  const isLoading = isSearchMode ? searching : loading;
 
   return (
     <div className="flex flex-col w-full px-margin-desktop pb-32 pt-8">
@@ -36,8 +139,30 @@ export default function ExplorePage() {
         <p className="font-body-lg text-body-lg text-on-surface-variant max-w-2xl">Discover hidden gems and popular spots curated for every kind of traveler.</p>
       </div>
 
+      {/* Search */}
+      <div className="relative max-w-xl mb-8">
+        <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
+          <span className="material-symbols-outlined text-on-surface-variant opacity-60 text-[22px]">search</span>
+        </div>
+        <input
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search any destination, anywhere..."
+          className="w-full bg-surface-container-high/50 hover:bg-surface-container-high/80 focus:bg-surface-container-lowest transition-colors py-4 pl-14 pr-12 rounded-full font-body-lg text-on-surface placeholder-on-surface-variant/50 outline-none"
+        />
+        {searchQuery && (
+          <button
+            onClick={() => setSearchQuery("")}
+            className="absolute inset-y-0 right-0 pr-5 flex items-center text-on-surface-variant hover:text-on-surface"
+            aria-label="Clear search"
+          >
+            <span className="material-symbols-outlined text-[20px]">close</span>
+          </button>
+        )}
+      </div>
+
       {/* Category Filters */}
-      <div className="flex gap-3 mb-10 overflow-x-auto pb-2 hide-scrollbar">
+      <div className={`flex gap-3 mb-10 overflow-x-auto pb-2 hide-scrollbar transition-opacity ${isSearchMode ? "opacity-40 pointer-events-none" : ""}`}>
         {categories.map(cat => (
           <button
             key={cat.id}
@@ -63,32 +188,67 @@ export default function ExplorePage() {
         </div>
       </div>
 
+      {isSearchMode && !searching && (
+        <p className="font-body-md text-on-surface-variant mb-6 -mt-6">
+          {displayed.length > 0
+            ? `${displayed.length} result${displayed.length === 1 ? "" : "s"} for "${searchQuery.trim()}"`
+            : `No results for "${searchQuery.trim()}"`}
+        </p>
+      )}
+
+      {error && (
+        <div className="mb-8 p-4 rounded-2xl bg-red-50 border border-red-200 text-red-700 font-body-md">{error}</div>
+      )}
+
       {/* Map View */}
-      {showMap && (
+      {showMap && !isLoading && displayed.length > 0 && (
         <div className="mb-10 h-[500px] rounded-[32px] overflow-hidden shadow-lg border border-outline-variant/20">
-          <MapWrapper places={filtered} center={[20.5937, 78.9629]} />
+          <MapWrapper places={displayed.map(p => ({ ...p, _id: p.id }))} center={[20.5937, 78.9629]} />
         </div>
       )}
 
       {/* Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter">
-        {filtered.map(dest => (
-          <div key={dest._id} className="group relative rounded-[24px] overflow-hidden aspect-[4/5] cursor-pointer shadow-sm hover:shadow-xl transition-all duration-500 bg-surface-container">
-            <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105" style={{ backgroundImage: `url('${dest.img}')` }}></div>
-            <div className="absolute inset-0 bg-gradient-to-t from-[#1A1A1A]/90 via-[#1A1A1A]/20 to-transparent opacity-80 group-hover:opacity-90 transition-opacity"></div>
-            <div className="absolute top-4 right-4 w-10 h-10 rounded-full bg-surface-container-lowest/20 backdrop-blur-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity transform translate-y-2 group-hover:translate-y-0">
-              <span className="material-symbols-outlined text-white">bookmark_add</span>
-            </div>
-            <div className="absolute bottom-0 left-0 right-0 p-6 transform translate-y-4 group-hover:translate-y-0 transition-transform">
-              <div className="inline-block px-3 py-1 bg-surface-container-lowest/20 backdrop-blur-md rounded-full font-label-sm text-white mb-3">{dest.category}</div>
-              <h4 className="font-headline-md text-headline-md text-white mb-1">{dest.name}</h4>
-              <p className="font-body-md text-body-md text-white/70 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-center gap-1">
-                <span className="material-symbols-outlined text-[16px]">location_on</span>
-                {dest.location}
-              </p>
-            </div>
-          </div>
-        ))}
+        {isLoading ? (
+          [1, 2, 3, 4, 5, 6].map(i => (
+            <div key={i} className="animate-pulse rounded-[24px] aspect-[4/5] bg-surface-container" />
+          ))
+        ) : displayed.length === 0 ? (
+          <p className="col-span-full text-center py-16 font-body-lg text-on-surface-variant">
+            {isSearchMode ? "No destinations found. Try a different search." : "No destinations found for this category."}
+          </p>
+        ) : (
+          displayed.map(dest => {
+            const isSaved = Boolean(saved[dest.id]);
+            return (
+              <div key={dest.id} className="group relative rounded-[24px] overflow-hidden aspect-[4/5] cursor-pointer shadow-sm hover:shadow-xl transition-all duration-500 bg-surface-container">
+                <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105" style={{ backgroundImage: `url('${dest.photos[0] || ""}')` }}></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-[#1A1A1A]/90 via-[#1A1A1A]/20 to-transparent opacity-80 group-hover:opacity-90 transition-opacity"></div>
+                <button
+                  onClick={(e) => { e.stopPropagation(); toggleSave(dest); }}
+                  disabled={savingId === dest.id}
+                  className={`absolute top-4 right-4 w-10 h-10 rounded-full backdrop-blur-md flex items-center justify-center transition-all transform translate-y-2 group-hover:translate-y-0 disabled:opacity-50 ${
+                    isSaved ? "bg-primary opacity-100" : "bg-surface-container-lowest/20 opacity-0 group-hover:opacity-100"
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-white" style={isSaved ? { fontVariationSettings: "'FILL' 1" } : undefined}>
+                    {isSaved ? "bookmark" : "bookmark_add"}
+                  </span>
+                </button>
+                <div className="absolute bottom-0 left-0 right-0 p-6 flex flex-col justify-end">
+                  {dest.category && (
+                    <div className="inline-block px-3 py-1 bg-surface-container-lowest/20 backdrop-blur-md rounded-full font-label-sm text-white mb-3 w-fit">{dest.category}</div>
+                  )}
+                  <h3 className="font-headline-lg text-headline-lg text-white mb-1">{dest.name}</h3>
+                  <p className="font-body-md text-body-md text-white/80 flex items-center gap-1">
+                    <span className="material-symbols-outlined text-[16px]">location_on</span>
+                    {placeLocationLabel(dest) || dest.address || ""}
+                  </p>
+                </div>
+              </div>
+            );
+          })
+        )}
       </div>
     </div>
   );

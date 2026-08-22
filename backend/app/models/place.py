@@ -1,5 +1,4 @@
-from sqlalchemy import Column, String, Float, Text
-from geoalchemy2 import Geometry
+from sqlalchemy import Column, String, Float, Text, JSON
 from app.db.base import Base
 import uuid
 
@@ -10,10 +9,23 @@ class Place(Base):
     name = Column(String, index=True, nullable=False)
     description = Column(Text, nullable=True)
     category = Column(String, index=True, nullable=True)
-    
-    # Store lat/lon for easy access
+
     latitude = Column(Float, nullable=False)
     longitude = Column(Float, nullable=False)
-    
-    # PostGIS geometry column for spatial queries (SRID 4326 is standard GPS coord system)
-    location = Column(Geometry(geometry_type='POINT', srid=4326), nullable=False)
+
+    address = Column(String, nullable=True)
+    city = Column(String, nullable=True)
+    state = Column(String, nullable=True)
+    country = Column(String, nullable=True)
+
+    activities = Column(JSON, default=list, nullable=False)
+    estimated_visit_duration = Column(String, nullable=True)
+    opening_hours = Column(String, nullable=True)
+    entry_fee = Column(String, nullable=True)
+    best_time = Column(String, nullable=True)
+    best_season = Column(String, nullable=True)
+    difficulty = Column(String, nullable=True)
+    safety_notes = Column(Text, nullable=True)
+    source_links = Column(JSON, default=list, nullable=False)
+    verification_status = Column(String, default="unverified", nullable=False)
+    photos = Column(JSON, default=list, nullable=False)

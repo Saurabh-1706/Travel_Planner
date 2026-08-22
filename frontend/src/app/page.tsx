@@ -1,26 +1,85 @@
 "use client";
 
-import { useState } from "react";
-import { useSession } from "next-auth/react";
+import { useEffect, useState } from "react";
+import { useSession, signOut } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 import MapWrapper from "@/components/MapWrapper";
 import { useLanguage } from "@/lib/LanguageContext";
-
-interface Place {
-  _id: string;
-  name: string;
-  latitude: number;
-  longitude: number;
-  category?: string;
-  address?: string;
-}
+import {
+  Place,
+  BucketListItem,
+  placeLocationLabel,
+  fetchPlaces,
+  fetchBucketList,
+  addToBucketList,
+  removeFromBucketList,
+  ApiError,
+  API_BASE_URL,
+} from "@/lib/api";
 
 export default function Home() {
-  const { data: session } = useSession();
+  const { data: session, status: authStatus } = useSession();
+  const router = useRouter();
   const { t } = useLanguage();
   const [searchQuery, setSearchQuery] = useState("");
   const [places, setPlaces] = useState<Place[]>([]);
   const [mapCenter, setMapCenter] = useState<[number, number]>([18.5204, 73.8567]); // Default: Pune
   const [loading, setLoading] = useState(false);
+
+  const [curated, setCurated] = useState<Place[]>([]);
+  const [curatedLoading, setCuratedLoading] = useState(true);
+  const [saved, setSaved] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    fetchPlaces()
+      .then((all) => setCurated(all.slice(0, 4)))
+      .catch(() => {})
+      .finally(() => setCuratedLoading(false));
+  }, []);
+
+  useEffect(() => {
+    if (!session?.accessToken) {
+      setSaved({});
+      return;
+    }
+    fetchBucketList(session.accessToken)
+      .then((items) => {
+        const map: Record<string, string> = {};
+        items.forEach((item) => { map[item.place.id] = item.id; });
+        setSaved(map);
+      })
+      .catch((err) => {
+        if (err instanceof ApiError && err.status === 401) signOut({ callbackUrl: "/login" });
+      });
+  }, [session?.accessToken]);
+
+  const toggleSave = async (place: Place) => {
+    if (authStatus !== "authenticated" || !session?.accessToken) {
+      router.push("/login");
+      return;
+    }
+    try {
+      const existingItemId = saved[place.id];
+      if (existingItemId) {
+        await removeFromBucketList(session.accessToken, existingItemId);
+        setSaved((prev) => {
+          const next = { ...prev };
+          delete next[place.id];
+          return next;
+        });
+      } else {
+        const item: BucketListItem = await addToBucketList(session.accessToken, place.id);
+        setSaved((prev) => ({ ...prev, [place.id]: item.id }));
+      }
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        signOut({ callbackUrl: "/login" });
+      } else if (!(err instanceof ApiError && err.status === 409)) {
+        console.error(err);
+      }
+    }
+  };
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,29 +87,17 @@ export default function Home() {
 
     setLoading(true);
     try {
-      const res = await fetch(`http://localhost:8000/api/v1/places/search?query=${searchQuery}`)
+      const res = await fetch(`${API_BASE_URL}/places/search?query=${encodeURIComponent(searchQuery)}`)
         .catch(() => null);
 
       if (res && res.ok) {
-        const data = await res.json();
+        const data: Place[] = await res.json();
         setPlaces(data);
         if (data.length > 0) {
           setMapCenter([data[0].latitude, data[0].longitude]);
         }
       } else {
-        // Fallback mock data
-        const mockData = [
-          {
-            _id: "1",
-            name: `${searchQuery} Destination`,
-            latitude: mapCenter[0] + (Math.random() - 0.5) * 0.1,
-            longitude: mapCenter[1] + (Math.random() - 0.5) * 0.1,
-            category: "Attraction",
-            address: "Sample Address"
-          }
-        ];
-        setPlaces(mockData);
-        setMapCenter([mockData[0].latitude, mockData[0].longitude]);
+        setPlaces([]);
       }
     } catch (err) {
       console.error(err);
@@ -111,7 +158,7 @@ export default function Home() {
                 <ul className="space-y-3 px-2">
                   {places.map((place) => (
                     <li
-                      key={place._id}
+                      key={place.id}
                       className="p-4 rounded-2xl border border-surface-container-high hover:border-primary/30 hover:bg-primary/5 transition-colors cursor-pointer group"
                       onClick={() => setMapCenter([place.latitude, place.longitude])}
                     >
@@ -120,7 +167,7 @@ export default function Home() {
                         <div>
                           <h4 className="font-headline-md text-body-lg text-on-surface group-hover:text-primary transition-colors">{place.name}</h4>
                           {place.category && <p className="text-label-sm text-secondary mb-1 uppercase tracking-wider">{place.category}</p>}
-                          {place.address && <p className="font-body-md text-sm text-on-surface-variant line-clamp-1">{place.address}</p>}
+                          <p className="font-body-md text-sm text-on-surface-variant line-clamp-1">{place.address || placeLocationLabel(place)}</p>
                         </div>
                       </div>
                     </li>
@@ -130,7 +177,7 @@ export default function Home() {
             </div>
             <div className="flex-1 rounded-[24px] overflow-hidden bg-surface-container relative">
               {!loading && places.length > 0 && (
-                <MapWrapper places={places} center={mapCenter} />
+                <MapWrapper places={places.map(p => ({ ...p, _id: p.id }))} center={mapCenter} />
               )}
             </div>
           </div>
@@ -165,51 +212,42 @@ export default function Home() {
             <div className="font-label-sm text-label-sm text-primary tracking-[0.2em] uppercase mb-2">{t.curatedDiscoveries}</div>
             <h3 className="font-headline-lg text-headline-lg text-on-surface">{t.yourBucketList}</h3>
           </div>
-          <a className="font-label-lg text-label-lg text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1" href="#">
+          <Link href="/explore" className="font-label-lg text-label-lg text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1">
             {t.viewAll} <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
-          </a>
+          </Link>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter">
-          {[
-            {
-              name: "Devkund Waterfall",
-              loc: "Maharashtra, India",
-              tag: "Nature",
-              img: "https://lh3.googleusercontent.com/aida-public/AB6AXuB2B8pWEkB40yyTXXHiohSe4-AiYXkSbp3ZeJgnxybvs43KYsZPn48X8LX2esgj7KFIg_R2WqXuRCA9XiVuyBNH-Erx_JtrikGzrfybs6veURyoWNmTVriZuQ0GXAQeH6eWFmDO-ZJORUAYlOMHPebVey8_tanCAsSXxc4jWAA9zOJN179EX1vFVGMaMPqH8uTgW45FH3AdoMqsE0jWe0IZYZIKEO6-U6NjQ7B8Y-oxijSI95kriv1V"
-            },
-            {
-              name: "Sandhan Valley",
-              loc: "Maharashtra, India",
-              tag: "Adventure",
-              img: "https://lh3.googleusercontent.com/aida-public/AB6AXuCbad8_BDEpgyQt69XtbYmmp9amuiDdh5MvznzdPC-ItxOItYX7_f-dZN9_6eY8ahx8OP0Wi3YpMfotMZNQSeh8Kqd2xatbY2nawHkDeA6NX4iSeMBS9SQjcQiCLgkZ2jkupHCSmqYbBDqeTIkVYOzXeAcd_82fJ1w6icGnU03UTr2TfCCGMtQ7UvvkAT2AnQCEYLZE0ZvAzlPRscXiVIn1HesFPM44-LMNgBM_Yl7qKbXQBE_sauf7"
-            },
-            {
-              name: "Harishchandragad",
-              loc: "Maharashtra, India",
-              tag: "Heritage",
-              img: "https://lh3.googleusercontent.com/aida-public/AB6AXuCc9VMlfpJtNggVnlfIvUQoN1gzMrNH2t_XXA6YGmGiN7CmymDRGFFY7-OlBdYEohXdH3gLDDVo1s2IVDxK0r4hmNsLFqj9Qxo05hyBIizimVtJxlOFKLWJMEcBUvi4GsAYeCibti4ok6xfLhaQE3ImLbb7QoZ56tJSpBypYKfdk89BOk0F6ikuoxgOR02wwecDt30kfkBBBzVabJoQe4-rMs43xr7lfds4mtqy-jlSOebAKY99pKtS"
-            },
-            {
-              name: "Butterfly Beach",
-              loc: "Goa, India",
-              tag: "Coastal",
-              img: "https://lh3.googleusercontent.com/aida-public/AB6AXuDdz0jNkfgaymgceQlaYNk4GA5s7Sjpw18WnchlJXE_tJ2szRFZlyVrz_dDbFolK7ZkfHUTQSLay6fG1VzNaWXnpkK5GweTW9EfrqFIuNeX6JmFjT7nAQ-kPgQ7AoKsqJkZ7OKKS4cdkgq4l3SGZzJh8Pik-PlbkTYjbW5WmVdBJj3MMdVEAldar-zMnn1WxM6Gn7E4lx1Dn3P0kkB4MyqczWUc5cPNcuLu7-ZECTYnPkE3cBgoD_7s"
-            },
-          ].map((item, i) => (
-            <div key={i} className="group relative rounded-[24px] overflow-hidden aspect-[4/5] cursor-pointer shadow-sm hover:shadow-xl transition-all duration-500 bg-surface-container">
-              <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105" style={{ backgroundImage: `url('${item.img}')` }}></div>
-              <div className="absolute inset-0 bg-gradient-to-t from-[#1A1A1A]/90 via-[#1A1A1A]/20 to-transparent opacity-80 group-hover:opacity-90 transition-opacity"></div>
-              <div className="absolute top-4 right-4 w-10 h-10 rounded-full bg-surface-container-lowest/20 backdrop-blur-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity transform translate-y-2 group-hover:translate-y-0">
-                <span className="material-symbols-outlined text-white" style={{ fontVariationSettings: "'FILL' 1" }}>favorite</span>
-              </div>
-              <div className="absolute bottom-0 left-0 right-0 p-6 transform translate-y-4 group-hover:translate-y-0 transition-transform">
-                <div className="inline-block px-3 py-1 bg-surface-container-lowest/20 backdrop-blur-md rounded-full font-label-sm text-white mb-3 uppercase tracking-widest">{item.tag}</div>
-                <h4 className="font-headline-lg text-headline-lg text-white mb-1 leading-tight">{item.name}</h4>
-                <p className="font-body-md text-body-md text-white/70 tracking-wider opacity-0 group-hover:opacity-100 transition-opacity duration-500">{item.loc}</p>
-              </div>
-            </div>
-          ))}
+          {curatedLoading ? (
+            [1, 2, 3, 4].map(i => (
+              <div key={i} className="animate-pulse rounded-[24px] aspect-[4/5] bg-surface-container" />
+            ))
+          ) : (
+            curated.map((place) => {
+              const isSaved = Boolean(saved[place.id]);
+              return (
+                <div key={place.id} className="group relative rounded-[24px] overflow-hidden aspect-[4/5] cursor-pointer shadow-sm hover:shadow-xl transition-all duration-500 bg-surface-container">
+                  <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105" style={{ backgroundImage: `url('${place.photos[0] || ""}')` }}></div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#1A1A1A]/90 via-[#1A1A1A]/20 to-transparent opacity-80 group-hover:opacity-90 transition-opacity"></div>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); toggleSave(place); }}
+                    className={`absolute top-4 right-4 w-10 h-10 rounded-full backdrop-blur-md flex items-center justify-center transition-all transform translate-y-2 group-hover:translate-y-0 ${
+                      isSaved ? "bg-primary opacity-100" : "bg-surface-container-lowest/20 opacity-0 group-hover:opacity-100"
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-white" style={{ fontVariationSettings: "'FILL' 1" }}>favorite</span>
+                  </button>
+                  <div className="absolute bottom-0 left-0 right-0 p-6 transform translate-y-4 group-hover:translate-y-0 transition-transform">
+                    {place.category && (
+                      <div className="inline-block px-3 py-1 bg-surface-container-lowest/20 backdrop-blur-md rounded-full font-label-sm text-white mb-3 uppercase tracking-widest">{place.category}</div>
+                    )}
+                    <h4 className="font-headline-lg text-headline-lg text-white mb-1 leading-tight">{place.name}</h4>
+                    <p className="font-body-md text-body-md text-white/70 tracking-wider opacity-0 group-hover:opacity-100 transition-opacity duration-500">{placeLocationLabel(place)}</p>
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
       </div>
 

@@ -19,7 +19,7 @@ interface Place {
   name: string;
   latitude: number;
   longitude: number;
-  category?: string;
+  category?: string | null;
 }
 
 interface MapProps {
